@@ -62,13 +62,80 @@ const styles = {
   },
 };
 
+const BASE_HORRAIRE = 35;
+
 function App() {
   const { CSVReader } = useCSVReader();
   const [zoneHover, setZoneHover] = useState(false);
-  const [data, setData] = useState([]);
+  const [sortData, setSortData] = useState([]);
   const [removeHoverColor, setRemoveHoverColor] = useState(
     DEFAULT_REMOVE_HOVER_COLOR
   );
+
+  const getPrice = (time, nbParticipate, type, canceled) => {
+    const obj = {
+      PISTE: 11,
+      TATAMI: 20,
+    };
+
+    if (canceled) {
+      return 0;
+    } else if (
+      type === "RACK" ||
+      type === "RING" ||
+      nbParticipate < obj[type]
+    ) {
+      return time * BASE_HORRAIRE;
+    } else {
+      return (BASE_HORRAIRE + (nbParticipate - obj[type])) * time;
+    }
+  };
+
+  function parseDate(str) {
+    console.log("str", str);
+    let parts = str.split(" ");
+    let dateParts = parts[0].split("/");
+    let timeParts = parts[1].split(":");
+
+    return new Date(
+      dateParts[2],
+      dateParts[1] - 1,
+      dateParts[0],
+      timeParts[0],
+      timeParts[1],
+      timeParts[2]
+    );
+  }
+
+  const sortInfo = (data) => {
+    if (!data["Date de début du cours"]) return;
+    const date1 = parseDate(data["Date de début du cours"]);
+    const date2 = parseDate(data["Date de fin du cours"]);
+
+    const differenceInMs = date2 - date1;
+
+    let differenceInHours = differenceInMs / (1000 * 60 * 60);
+    return {
+      "Date du cours": data["Date de début du cours"].split(" ")[0],
+      Horraire: `${data["Date de début du cours"].split(" ")[1]} - ${
+        data["Date de fin du cours"].split(" ")[1]
+      }`,
+      Durée: differenceInHours,
+      Cours: data["Activité"],
+      Espace: data["Nom du Studio"],
+      "Nombre de personne": !data["Nombre total de réservation"]
+        ? 0
+        : parseInt(data["Nombre total de réservation"]),
+      Total: getPrice(
+        differenceInHours,
+        parseInt(data["Nombre total de réservation"]),
+        data["Nom du Studio"].toUpperCase(),
+        !(data["Supprimé le"] === "")
+      ),
+      Info: !(data["Supprimé le"] === "") ? "Cours annulé" : "",
+    };
+  };
+
   return (
     <div className="App">
       <CSVReader
@@ -76,9 +143,31 @@ function App() {
           header: true,
         }}
         onUploadAccepted={(results) => {
-          setData(
-            JSON.parse(JSON.stringify(results.data).replace(/[\uFFFD]/g, "é"))
+          const clearData = JSON.parse(
+            JSON.stringify(results.data).replace(/[\uFFFD]/g, "é")
           );
+
+          const sortByCoach = clearData.reduce((curr, acc) => {
+            if (
+              curr.findIndex(
+                (coach) => coach.sheetName === acc["Prénom du coach"]
+              ) === -1
+            ) {
+              curr.push({
+                sheetName: acc["Prénom du coach"],
+                details: [sortInfo(acc)],
+              });
+            } else {
+              curr[
+                curr.findIndex(
+                  (coach) => coach.sheetName === acc["Prénom du coach"]
+                )
+              ].details.push(sortInfo(acc));
+            }
+            return curr;
+          }, []);
+
+          setSortData(sortByCoach);
           setZoneHover(false);
         }}
         onDragOver={(event) => {
