@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import "./App.css";
 import { useCSVReader, lightenDarkenColor } from "react-papaparse";
+import csvlogo from "./img/csvlogo.png";
+import arrow from "./img/arrow.png";
+import excellogo from "./img/excellogo.png";
 
 const GREY = "#CCC";
 const GREY_LIGHT = "rgba(255, 255, 255, 0.4)";
@@ -24,27 +27,21 @@ const styles = {
     cursor: "pointer",
   },
   file: {
-    background: "#C2C2C2",
-    borderRadius: 20,
     display: "flex",
-    height: 150,
-    width: 150,
     position: "relative",
     zIndex: 10,
     flexDirection: "column",
     justifyContent: "center",
   },
   info: {
-    alignItems: "center",
     display: "flex",
-    flexDirection: "column",
-    paddingLeft: 10,
-    paddingRight: 10,
+    alignItems: "center",
   },
   name: {
     backgroundColor: GREY_LIGHT,
     borderRadius: 3,
     fontSize: 12,
+    marginTop: "0.5em",
     marginBottom: "0.5em",
   },
   zoneHover: {
@@ -56,9 +53,21 @@ const styles = {
   remove: {
     height: 23,
     position: "absolute",
-    right: 6,
-    top: 6,
+    top: -10,
     width: 23,
+  },
+  filelogo: {
+    height: 80,
+  },
+  arrowLogo: {
+    height: "60px",
+    marginLeft: "30px",
+    marginRight: "30px",
+  },
+  csvFile: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
   },
 };
 
@@ -204,8 +213,26 @@ function App() {
                 <>
                   <div style={styles.file}>
                     <div style={styles.info}>
-                      <span style={styles.name}>{acceptedFile.name}</span>
+                      <div style={styles.csvFile}>
+                        <img
+                          src={csvlogo}
+                          alt="csv files"
+                          style={styles.filelogo}
+                        />
+                        <span style={styles.name}>{acceptedFile.name}</span>
+                      </div>
+                      <img
+                        src={arrow}
+                        alt="arrow right"
+                        style={styles.arrowLogo}
+                      />
+                      <img
+                        src={excellogo}
+                        alt="excel files"
+                        style={styles.filelogo}
+                      />
                     </div>
+
                     <div
                       {...getRemoveFileProps()}
                       style={styles.remove}
