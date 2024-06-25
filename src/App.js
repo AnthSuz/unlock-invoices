@@ -69,12 +69,20 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
   },
+  inputNameFile: {
+    marginTop: "32px",
+    boxSizing: "border-box",
+    width: "100%",
+    padding: "10px",
+    fontSize: "16px",
+  },
 };
 
 const BASE_HORRAIRE = 35;
 
 function App() {
   const { CSVReader } = useCSVReader();
+  const [nameFile, setNameFile] = useState("");
   const [zoneHover, setZoneHover] = useState(false);
   const [sortData, setSortData] = useState([]);
   const [removeHoverColor, setRemoveHoverColor] = useState(
@@ -250,12 +258,20 @@ function App() {
                   </div>
                 </>
               ) : (
-                "Drop CSV file here or click to upload"
+                "Dépose le fichier CSV ici ou clique pour le télécharger"
               )}
             </div>
           </>
         )}
       </CSVReader>
+      <div>
+        <input
+          style={styles.inputNameFile}
+          onChange={(e) => setNameFile(e.target.value)}
+          value={nameFile}
+          placeholder="Ajoute un nom à ton fichier"
+        />
+      </div>
     </div>
   );
 }
