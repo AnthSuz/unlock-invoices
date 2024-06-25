@@ -83,6 +83,7 @@ function App() {
     } else if (
       type === "RACK" ||
       type === "RING" ||
+      !nbParticipate ||
       nbParticipate < obj[type]
     ) {
       return time * BASE_HORRAIRE;
@@ -92,7 +93,6 @@ function App() {
   };
 
   function parseDate(str) {
-    console.log("str", str);
     let parts = str.split(" ");
     let dateParts = parts[0].split("/");
     let timeParts = parts[1].split(":");
@@ -164,8 +164,19 @@ function App() {
                 )
               ].details.push(sortInfo(acc));
             }
+
             return curr;
           }, []);
+
+          sortByCoach.forEach((sorted) => {
+            if (sorted.sheetName === undefined) return;
+            const total = sorted.details.reduce((a, b) => a + b["Total"], 0);
+
+            sorted.details.push({
+              "": "Total :",
+              " ": total,
+            });
+          });
 
           setSortData(sortByCoach);
           setZoneHover(false);
