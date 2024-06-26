@@ -1,20 +1,23 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
-import { useCSVReader, lightenDarkenColor } from "react-papaparse";
-import csvlogo from "./img/csvlogo.png";
-import arrow from "./img/arrow.png";
-import excellogo from "./img/excellogo.png";
+import { useCSVReader } from "react-papaparse";
+import { JsonToExcel, exportToExcel } from "react-json-to-excel";
+
+import filelogo from "./img/filelogo.png";
+import unlocklogo from "./img/unlocklogo.png";
+
+import { cn } from "./lib/utils.ts";
+import GridPattern from "./components/magicui/grid-pattern.tsx";
 
 const GREY = "#CCC";
 const GREY_LIGHT = "rgba(255, 255, 255, 0.4)";
-const DEFAULT_REMOVE_HOVER_COLOR = "#A01919";
-const REMOVE_HOVER_COLOR_LIGHT = lightenDarkenColor(
-  DEFAULT_REMOVE_HOVER_COLOR,
-  40
-);
-const GREY_DIM = "#686868";
+const DEFAULT_REMOVE_HOVER_COLOR = "#000000";
+const REMOVE_HOVER_COLOR_LIGHT = "#848484";
 
 const styles = {
+  unlockLogo: {
+    maxWidth: "50%",
+  },
   zone: {
     alignItems: "center",
     border: `2px dashed ${GREY}`,
@@ -43,12 +46,13 @@ const styles = {
     fontSize: 12,
     marginTop: "0.5em",
     marginBottom: "0.5em",
+    padding: 4,
   },
   zoneHover: {
     borderColor: { GREY },
   },
   default: {
-    borderColor: { GREY_DIM },
+    borderColor: { GREY },
   },
   remove: {
     height: 23,
@@ -57,7 +61,7 @@ const styles = {
     width: 23,
   },
   filelogo: {
-    height: 80,
+    height: 50,
   },
   arrowLogo: {
     height: "60px",
@@ -69,13 +73,6 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
   },
-  inputNameFile: {
-    marginTop: "32px",
-    boxSizing: "border-box",
-    width: "100%",
-    padding: "10px",
-    fontSize: "16px",
-  },
 };
 
 const BASE_HORRAIRE = 35;
@@ -85,6 +82,7 @@ function App() {
   const [nameFile, setNameFile] = useState("");
   const [zoneHover, setZoneHover] = useState(false);
   const [sortData, setSortData] = useState([]);
+  const [backgroundArray, setBackgroundArray] = useState([]);
   const [removeHoverColor, setRemoveHoverColor] = useState(
     DEFAULT_REMOVE_HOVER_COLOR
   );
@@ -109,7 +107,7 @@ function App() {
     }
   };
 
-  function parseDate(str) {
+  const parseDate = (str) => {
     let parts = str.split(" ");
     let dateParts = parts[0].split("/");
     let timeParts = parts[1].split(":");
@@ -122,7 +120,7 @@ function App() {
       timeParts[1],
       timeParts[2]
     );
-  }
+  };
 
   const sortInfo = (data) => {
     if (!data["Date de début du cours"]) return;
@@ -153,123 +151,148 @@ function App() {
     };
   };
 
+  const generateBackground = (min, max) => {
+    function getRandomNumber(min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    let mainArray = [];
+
+    for (let i = 0; i < 20; i++) {
+      let subArray = [getRandomNumber(min, max), getRandomNumber(min, max)];
+      mainArray.push(subArray);
+    }
+
+    setBackgroundArray(mainArray);
+  };
+
+  useEffect(() => {
+    generateBackground(1, 20);
+  }, []);
+
   return (
     <div className="App">
-      <CSVReader
-        config={{
-          header: true,
-        }}
-        onUploadAccepted={(results) => {
-          const clearData = JSON.parse(
-            JSON.stringify(results.data).replace(/[\uFFFD]/g, "é")
-          );
+      <div className="relative flex h-full w-full max-w-[32rem] items-center justify-center overflow-hidden rounded-lg border bg-background p-8 md:shadow-xl ">
+        <div className="body">
+          <img src={unlocklogo} alt="unlock" style={styles.unlockLogo} />
+          <CSVReader
+            config={{
+              header: true,
+            }}
+            onUploadAccepted={(results) => {
+              const clearData = JSON.parse(
+                JSON.stringify(results.data).replace(/[\uFFFD]/g, "é")
+              );
 
-          const sortByCoach = clearData.reduce((curr, acc) => {
-            if (
-              curr.findIndex(
-                (coach) => coach.sheetName === acc["Prénom du coach"]
-              ) === -1
-            ) {
-              curr.push({
-                sheetName: acc["Prénom du coach"],
-                details: [sortInfo(acc)],
+              const sortByCoach = clearData.reduce((curr, acc) => {
+                if (
+                  curr.findIndex(
+                    (coach) => coach.sheetName === acc["Prénom du coach"]
+                  ) === -1
+                ) {
+                  curr.push({
+                    sheetName: acc["Prénom du coach"],
+                    details: [sortInfo(acc)],
+                  });
+                } else {
+                  curr[
+                    curr.findIndex(
+                      (coach) => coach.sheetName === acc["Prénom du coach"]
+                    )
+                  ].details.push(sortInfo(acc));
+                }
+
+                return curr;
+              }, []);
+              console.log("sortByCoach", sortByCoach);
+              sortByCoach.forEach((sorted) => {
+                if (sorted.sheetName === undefined) return;
+                const total = sorted.details.reduce(
+                  (a, b) => a + b["Total"],
+                  0
+                );
+
+                sorted.details.push({
+                  "": "Total :",
+                  " ": total,
+                });
               });
-            } else {
-              curr[
-                curr.findIndex(
-                  (coach) => coach.sheetName === acc["Prénom du coach"]
-                )
-              ].details.push(sortInfo(acc));
-            }
 
-            return curr;
-          }, []);
+              setSortData(sortByCoach);
+              setZoneHover(false);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setZoneHover(true);
+            }}
+            onDragLeave={(event) => {
+              event.preventDefault();
+              setZoneHover(false);
+            }}
+          >
+            {({ getRootProps, acceptedFile, getRemoveFileProps, Remove }) => (
+              <>
+                <div
+                  {...getRootProps()}
+                  style={Object.assign(
+                    {},
+                    styles.zone,
+                    zoneHover && styles.zoneHover
+                  )}
+                >
+                  {acceptedFile ? (
+                    <>
+                      <div style={styles.file}>
+                        <div style={styles.info}>
+                          <div style={styles.csvFile}>
+                            <img
+                              src={filelogo}
+                              alt="file"
+                              style={styles.filelogo}
+                            />
+                            <span style={styles.name}>{acceptedFile.name}</span>
+                          </div>
+                        </div>
 
-          sortByCoach.forEach((sorted) => {
-            if (sorted.sheetName === undefined) return;
-            const total = sorted.details.reduce((a, b) => a + b["Total"], 0);
-
-            sorted.details.push({
-              "": "Total :",
-              " ": total,
-            });
-          });
-
-          setSortData(sortByCoach);
-          setZoneHover(false);
-        }}
-        onDragOver={(event) => {
-          event.preventDefault();
-          setZoneHover(true);
-        }}
-        onDragLeave={(event) => {
-          event.preventDefault();
-          setZoneHover(false);
-        }}
-      >
-        {({ getRootProps, acceptedFile, getRemoveFileProps, Remove }) => (
-          <>
-            <div
-              {...getRootProps()}
-              style={Object.assign(
-                {},
-                styles.zone,
-                zoneHover && styles.zoneHover
-              )}
-            >
-              {acceptedFile ? (
-                <>
-                  <div style={styles.file}>
-                    <div style={styles.info}>
-                      <div style={styles.csvFile}>
-                        <img
-                          src={csvlogo}
-                          alt="csv files"
-                          style={styles.filelogo}
-                        />
-                        <span style={styles.name}>{acceptedFile.name}</span>
+                        <div
+                          {...getRemoveFileProps()}
+                          style={styles.remove}
+                          onMouseOver={(event) => {
+                            event.preventDefault();
+                            setRemoveHoverColor(REMOVE_HOVER_COLOR_LIGHT);
+                          }}
+                          onMouseOut={(event) => {
+                            event.preventDefault();
+                            setRemoveHoverColor(DEFAULT_REMOVE_HOVER_COLOR);
+                          }}
+                        >
+                          <Remove color={removeHoverColor} />
+                        </div>
                       </div>
-                      <img
-                        src={arrow}
-                        alt="arrow right"
-                        style={styles.arrowLogo}
-                      />
-                      <img
-                        src={excellogo}
-                        alt="excel files"
-                        style={styles.filelogo}
-                      />
-                    </div>
+                    </>
+                  ) : (
+                    <p style={{ fontWeight: "bold" }}>
+                      Dépose le fichier CSV ici ou clique pour le télécharger
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </CSVReader>
+          <div>
+            <input
+              className="inputNameFile"
+              onChange={(e) => setNameFile(e.target.value)}
+              value={nameFile}
+              placeholder="Ajoute un nom à ton fichier"
+            />
 
-                    <div
-                      {...getRemoveFileProps()}
-                      style={styles.remove}
-                      onMouseOver={(event) => {
-                        event.preventDefault();
-                        setRemoveHoverColor(REMOVE_HOVER_COLOR_LIGHT);
-                      }}
-                      onMouseOut={(event) => {
-                        event.preventDefault();
-                        setRemoveHoverColor(DEFAULT_REMOVE_HOVER_COLOR);
-                      }}
-                    >
-                      <Remove color={removeHoverColor} />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                "Dépose le fichier CSV ici ou clique pour le télécharger"
-              )}
-            </div>
-          </>
-        )}
-      </CSVReader>
-      <div>
-        <input
-          style={styles.inputNameFile}
-          onChange={(e) => setNameFile(e.target.value)}
-          value={nameFile}
-          placeholder="Ajoute un nom à ton fichier"
+            <button className="downloadButton">Télécharger</button>
+          </div>
+        </div>
+        <GridPattern
+          squares={backgroundArray}
+          className={(cn(), "inset-x-0 inset-y-[-30%] h-[200%] skew-y-12")}
         />
       </div>
     </div>

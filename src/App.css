@@ -1,4 +1,51 @@
 .App {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.body {
   margin: 16px;
+  margin-top: 0;
   text-align: center;
+}
+
+.inputNameFile {
+  margin-top: 32px;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 2px solid black;
+  border-radius: 8px;
+  outline: none;
+  position: relative;
+  z-index: 1000;
+}
+
+.inputNameFile:focus {
+  border-color: #848484;
+}
+
+.downloadButton {
+  width: 100%;
+  cursor: pointer;
+  padding: 11px;
+  font-size: 16px;
+  background-color: black;
+  /* color: #848484; */
+  color: white;
+  border: 2px solid black;
+  border-radius: 8px;
+  font-weight: bold;
+  position: relative;
+  z-index: 1000;
+}
+
+.downloadButton:hover {
+  background-color: #848484;
+  border-color: #848484;
+  /* color: black; */
 }
