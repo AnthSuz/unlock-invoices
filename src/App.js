@@ -170,9 +170,33 @@ function App() {
     generateBackground(1, 20);
   }, []);
 
+  const calculeTotalMonth = () => {
+    const copySortData = [...sortData];
+
+    sortData.forEach((test, index) => {
+      if (test.sheetName === undefined) return;
+      if (test.sheetName === "") {
+        test.sheetName = "Coach non renseigné";
+      }
+      const total = sortData[index].details.reduce((a, b) => a + b["Total"], 0);
+
+      copySortData[index].details.push({
+        "": "Total :",
+        " ": total,
+      });
+    });
+
+    if (copySortData[copySortData.length - 1].sheetName === undefined) {
+      copySortData.pop();
+    }
+
+    setSortData(copySortData);
+    setFileIsGenerated(true);
+  };
+
   return (
     <div className="App">
-      <div className="relative flex h-full w-full max-w-[32rem] items-center justify-center overflow-hidden rounded-lg border bg-background p-8 md:shadow-xl ">
+      <div className="relative flex h-full w-full max-w-[32rem] items-center justify-center overflow-hidden rounded-lg border bg-white p-8 md:shadow-xl ">
         <div className="body">
           <img src={unlocklogo} alt="unlock" style={styles.unlockLogo} />
           <CSVReader

@@ -13,7 +13,6 @@
 
 .inputNameFile {
   margin-top: 32px;
-  margin-bottom: 16px;
   box-sizing: border-box;
   width: 100%;
   padding: 10px;
@@ -35,7 +34,7 @@
   padding: 11px;
   font-size: 16px;
   background-color: black;
-  /* color: #848484; */
+  margin-top: 16px;
   color: white;
   border: 2px solid black;
   border-radius: 8px;
@@ -47,5 +46,10 @@
 .downloadButton:hover {
   background-color: #848484;
   border-color: #848484;
-  /* color: black; */
+}
+
+.downloadButton:disabled {
+  background-color: #eaeaea;
+  border-color: #eaeaea;
+  cursor: not-allowed;
 }
