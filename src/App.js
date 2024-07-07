@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
 import { useCSVReader } from "react-papaparse";
-import { JsonToExcel, exportToExcel } from "react-json-to-excel";
+import { exportToExcel } from "react-json-to-excel";
 
 import filelogo from "./img/filelogo.png";
 import unlocklogo from "./img/unlocklogo.png";
@@ -82,6 +82,7 @@ function App() {
   const [nameFile, setNameFile] = useState("");
   const [zoneHover, setZoneHover] = useState(false);
   const [sortData, setSortData] = useState([]);
+  const [fileIsGenerated, setFileIsGenerated] = useState(false);
   const [backgroundArray, setBackgroundArray] = useState([]);
   const [removeHoverColor, setRemoveHoverColor] = useState(
     DEFAULT_REMOVE_HOVER_COLOR
@@ -209,38 +210,27 @@ function App() {
               );
 
               const sortByCoach = clearData.reduce((curr, acc) => {
-                if (
-                  curr.findIndex(
-                    (coach) => coach.sheetName === acc["Prénom du coach"]
-                  ) === -1
-                ) {
+                const isMMACompetition = acc["Activité"] === "MMA COMPETITION";
+                const coachName =
+                  isMMACompetition && acc["Prénom du coach"] === ""
+                    ? "MMA COMPETITION"
+                    : acc["Prénom du coach"];
+
+                let coachIndex = curr.findIndex(
+                  (coach) => coach.sheetName === coachName
+                );
+
+                if (coachIndex === -1) {
                   curr.push({
-                    sheetName: acc["Prénom du coach"],
+                    sheetName: coachName,
                     details: [sortInfo(acc)],
                   });
                 } else {
-                  curr[
-                    curr.findIndex(
-                      (coach) => coach.sheetName === acc["Prénom du coach"]
-                    )
-                  ].details.push(sortInfo(acc));
+                  curr[coachIndex].details.push(sortInfo(acc));
                 }
 
                 return curr;
               }, []);
-              console.log("sortByCoach", sortByCoach);
-              sortByCoach.forEach((sorted) => {
-                if (sorted.sheetName === undefined) return;
-                const total = sorted.details.reduce(
-                  (a, b) => a + b["Total"],
-                  0
-                );
-
-                sorted.details.push({
-                  "": "Total :",
-                  " ": total,
-                });
-              });
 
               setSortData(sortByCoach);
               setZoneHover(false);
@@ -290,7 +280,15 @@ function App() {
                             setRemoveHoverColor(DEFAULT_REMOVE_HOVER_COLOR);
                           }}
                         >
-                          <Remove color={removeHoverColor} />
+                          <div
+                            onClick={() => {
+                              setSortData([]);
+                              setFileIsGenerated(false);
+                              setNameFile("");
+                            }}
+                          >
+                            <Remove color={removeHoverColor} />
+                          </div>
                         </div>
                       </div>
                     </>
@@ -310,8 +308,22 @@ function App() {
               value={nameFile}
               placeholder="Ajoute un nom à ton fichier"
             />
-
-            <button className="downloadButton">Télécharger</button>
+            <button
+              className="downloadButton"
+              onClick={() => calculeTotalMonth()}
+              disabled={!sortData.length}
+            >
+              Génerer
+            </button>
+            <button
+              className="downloadButton"
+              onClick={() =>
+                exportToExcel(sortData, nameFile ? nameFile : "Fichier", true)
+              }
+              disabled={!fileIsGenerated}
+            >
+              Télécharger
+            </button>
           </div>
         </div>
         <GridPattern
