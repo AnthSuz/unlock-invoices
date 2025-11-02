@@ -99,6 +99,7 @@ function App() {
     } else if (
       type === "RACK" ||
       type === "RING" ||
+      type === "CAGE" ||
       !nbParticipate ||
       nbParticipate < obj[type]
     ) {
@@ -144,7 +145,9 @@ function App() {
         : parseInt(data["Nombre total de réservation"]),
       Total: getPrice(
         differenceInHours,
-        parseInt(data["Nombre total de réservation"]),
+        !data["Nombre total de réservation"]
+        ? 0
+        : parseInt(data["Nombre total de réservation"]),
         data["Nom du Studio"].toUpperCase(),
         !(data["Supprimé le"] === "")
       ),
@@ -190,7 +193,7 @@ function App() {
     if (copySortData[copySortData.length - 1].sheetName === undefined) {
       copySortData.pop();
     }
-
+    
     setSortData(copySortData);
     setFileIsGenerated(true);
   };
